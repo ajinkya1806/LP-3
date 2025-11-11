@@ -2,6 +2,8 @@
 #include <queue>
 #include <unordered_map>
 #include <vector>
+#include <string> // Added for getline
+
 using namespace std;
 
 // Node structure for Huffman Tree
@@ -16,7 +18,13 @@ struct Node {
 // Comparator for priority queue (min-heap)
 struct Compare {
     bool operator()(Node* l, Node* r) {
-        return l->freq > r->freq;  // Min-heap based on frequency
+        // Primary sort: by frequency (min-heap)
+        if (l->freq != r->freq) {
+            return l->freq > r->freq;
+        }
+        
+        // if frequencies are the same, forcing a consistent tree.
+        return l->ch > r->ch;
     }
 };
 
@@ -27,17 +35,25 @@ void generateCodes(Node* root, string str, unordered_map<char, string>& huffmanC
 
     // Leaf node contains character
     if (!root->left && !root->right) {
-        huffmanCode[root->ch] = str;
+        // Handle the edge case (e.g., input "aaaaa") by assigning "0".
+        huffmanCode[root->ch] = (str.empty() ? "0" : str);
     }
 
     generateCodes(root->left, str + "0", huffmanCode);
     generateCodes(root->right, str + "1", huffmanCode);
 }
 
+
 int main() {
     string text;
     cout << "Enter the string to encode: ";
     getline(cin, text);
+
+    // Handle empty input
+    if (text.empty()) {
+        cout << "Input string is empty. Nothing to encode." << endl;
+        return 0;
+    }
 
     // Count frequency of each character
     unordered_map<char, int> freq;
@@ -56,6 +72,7 @@ int main() {
         Node* left = pq.top(); pq.pop();
         Node* right = pq.top(); pq.pop();
 
+        // '\0' is used for internal nodes
         Node* sum = new Node('\0', left->freq + right->freq);
         sum->left = left;
         sum->right = right;
@@ -70,8 +87,12 @@ int main() {
 
     // Print Huffman Codes
     cout << "\nHuffman Codes:\n";
-    for (auto pair : huffmanCode)
-        cout << pair.first << " : " << pair.second << "\n";
+    for (auto pair : huffmanCode) {
+        // Don't print the code for the internal node character if it exists
+        if (pair.first != '\0') { 
+            cout << "'" << pair.first << "' : " << pair.second << "\n";
+        }
+    }
 
     // Encode the input string
     string encoded = "";
